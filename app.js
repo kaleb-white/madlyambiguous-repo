@@ -185,58 +185,65 @@ io.on('connection', function (socket) {
 	socket.on('RequestParse', function(data) {
 		var uname = socketsOfClients[socket.id];
 		if (data.length > 0 && data[0] !== undefined && data[0] != '') {
+            var basicMode = true;
+            if (data[1] == 1) {
+                socket.emit('ReturnWN', 'company');
+                basicMode = false;
+            } 
+            if (basicMode){
+            
+                var words = new pos.Lexer().lex(data[0].toLowerCase());
+                var tagger = new pos.Tagger();
+                var taggedWords = tagger.tag(words);
+                /*for (i in taggedWords) {
+                    var taggedWord = taggedWords[i];
+                    var word = taggedWord[0];
+                    var tag = taggedWord[1];
+                    console.log(word + " /" + tag);
+                }*/
+                // get first and last (exclusive) indices of main phrase
+                // first group of Js and Ns
+                // if phrase ends with IN or contains VBG, go for NONE OF THE ABOVE???
+                var known = true;
+                for (i in taggedWords)
+                    if (taggedWords[i][1] == 'VBG' || (i == taggedWords.length-1 && taggedWords[i][1] == 'IN'))
+                        known = false;
 
-			var words = new pos.Lexer().lex(data[0].toLowerCase());
-			var tagger = new pos.Tagger();
-			var taggedWords = tagger.tag(words);
-			/*for (i in taggedWords) {
-				var taggedWord = taggedWords[i];
-				var word = taggedWord[0];
-				var tag = taggedWord[1];
-				console.log(word + " /" + tag);
-			}*/
-			// get first and last (exclusive) indices of main phrase
-			// first group of Js and Ns
-			// if phrase ends with IN or contains VBG, go for NONE OF THE ABOVE???
-			var known = true;
-			for (i in taggedWords)
-				if (taggedWords[i][1] == 'VBG' || (i == taggedWords.length-1 && taggedWords[i][1] == 'IN'))
-					known = false;
+                if (known) {
+                    var mn = GetMainN(words, taggedWords);
+                    var ln = [];
+                    lemmer.lemmatize(mn, function(err,lems) {
+                        ln = lems;
 
-			if (known) {
-				var mn = GetMainN(words, taggedWords);
-				var ln = [];
-				lemmer.lemmatize(mn, function(err,lems) {
-					ln = lems;
+                        //mn.forEach(function(x,i) { ln.push(natural.PorterStemmer.stem(x)); });
+                        //mn.forEach(function(x,i) { ln.push(natural.LancasterStemmer.stem(x)); });
 
-					//mn.forEach(function(x,i) { ln.push(natural.PorterStemmer.stem(x)); });
-					//mn.forEach(function(x,i) { ln.push(natural.LancasterStemmer.stem(x)); });
+                        // variants: 1. as-is + lem(as-is); 2. all but the last noun; 3. all indiv words, left to right
+					   var variants = [mn.join(' '), ln.join(' ')];
+					   if (mn.length > 1) variants = variants.concat([mn.slice(0,mn.length-1).join(' '), ln.slice(0,ln.length-1).join(' ')]);
+					   variants = variants.concat(mn).concat(ln);
+					   //console.log(variants)
 
-					// variants: 1. as-is + lem(as-is); 2. all but the last noun; 3. all indiv words, left to right
-					var variants = [mn.join(' '), ln.join(' ')];
-					if (mn.length > 1) variants = variants.concat([mn.slice(0,mn.length-1).join(' '), ln.slice(0,ln.length-1).join(' ')]);
-					variants = variants.concat(mn).concat(ln);
-					//console.log(variants)
-
-					var found = false;
-					for (var i=0; i<variants.length; i++) {
-						if (wn.food.indexOf(variants[i]) >= 0) {
-							socket.emit('ReturnWN','food');
-							found = true;
-						} else if (wn.utensil.indexOf(variants[i]) >= 0) {
-							socket.emit('ReturnWN','utensil');
-							found = true;
-						} else if (wn.manner.indexOf(variants[i]) >= 0) {
-							socket.emit('ReturnWN','manner');
-							found = true;
-						}
-						if (found) break;
-					}
-					if (!found) socket.emit('ReturnWN','company');
-				});
-
-			} else socket.emit('ReturnWN','company');
-			//} else socket.emit('ReturnWN','none');
+					   var found = false;
+					   for (var i=0; i<variants.length; i++) {
+						  if (wn.food.indexOf(variants[i]) >= 0) {
+                                socket.emit('ReturnWN','food');
+                                found = true;
+						  } else if (wn.utensil.indexOf(variants[i]) >= 0) {
+                                socket.emit('ReturnWN','utensil');
+                                found = true;
+						  } else if (wn.manner.indexOf(variants[i]) >= 0) {
+				                socket.emit('ReturnWN','manner');
+                                found = true;
+						  }
+						  if (found) break;
+					   }
+					   if (!found) socket.emit('ReturnWN','company');
+				    });
+                } 
+                    else socket.emit('ReturnWN','company');
+                //} else socket.emit('ReturnWN','none');
+            }
 		}
 	});
 
