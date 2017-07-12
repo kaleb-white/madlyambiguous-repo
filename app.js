@@ -15,6 +15,14 @@ var pos = require('pos');
 var natural = require('natural');
 var lemmer = require('lemmer');
 
+/***** Python Server *****/
+
+var zerorpc = require('zerorpc');
+
+var client = new zerorpc.Client();
+client.connect("tcp://127.0.0.1:4242");
+
+
 /***** WORDNET *****/
 
 var wn = require('./data/wn-entries.json')
@@ -187,6 +195,9 @@ io.on('connection', function (socket) {
 		if (data.length > 0 && data[0] !== undefined && data[0] != '') {
             var basicMode = true;
             if (data[1] == 1) {
+                client.invoke("hello", "RPC", function(error, res, more) {
+                    console.log(res);
+                });
                 socket.emit('ReturnWN', 'company');
                 basicMode = false;
             } 
