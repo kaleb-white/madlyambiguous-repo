@@ -174,7 +174,7 @@ hr { border-width:2px; }
 	/*box-sizing:border-box;*/
 }
 
-/* added by kaleb-white */
+
 
  
 
@@ -207,6 +207,9 @@ hr { border-width:2px; }
     font-size: 12px;
 }
 
+.advMode, .tellMode, .basicMode {
+    display: block;
+}
 /* end */
 
 #page {

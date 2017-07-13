@@ -383,3 +383,9 @@ $(document).on(click,'.advancedMode', function(event){
     $('.tellMode').empty();
     $('.tellMode').append('Basic Mode');
 })
+
+//socket.on(function(nopy){
+//    $('.advancedMode').style.display('none');
+//    $('.tellMode').append('Basic Mode - Advanced Mode unavailable');
+//    $('.basicMode').style.display('none');
+//})
