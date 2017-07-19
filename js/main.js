@@ -18,6 +18,8 @@ var globallosslocalloss = ['You\'re pretty good at this, I guess.', 'I\'m just h
 
 //
 var AdvMode = 0;
+
+var pyServDown = false;
 //
 
 $(document).ready(function() {
@@ -26,10 +28,21 @@ $(document).ready(function() {
 
 	var cUrl = document.url;
 	socket = io.connect(cUrl);
-
+    
+    socket.emit('check');
+    
 	socket.on('ReturnWN', function(data) {
-		//console.log(data);
-		var guess = 'Jane ate spaghetti in the presence of <span class="blank"></span>.';
+		
+        //console.log(data);
+		if (AdvMode == 1 && data == 'none') {
+            $('.tellMode').empty();
+            $('.tellMode').append('Advanced Mode Unavailable');
+            $('.buttonRemove').empty();
+            pyServDown = true;
+            AdvMode = 0; 
+        }
+        
+        var guess = 'Jane ate spaghetti in the presence of <span class="blank"></span>.';
 		$('.opt .txt:first-child').text('No,');
 		$('.opt').removeClass('compsel');
 		$('.opt').removeClass('usersel');
@@ -96,6 +109,16 @@ function submitQuery(){
 			play(); //draw canvas
 			$('.vertical').slick('slickGoTo',3);
 		}
+}
+
+function submitQueryA(){
+    var inputtext = 'check';
+    $('.blank').text(inputtext);
+    $('.blank.capital').text(inputtext.charAt(0).toUpperCase()+inputtext.slice(1));
+    if (inputtext.trim() != '') {
+        socket.emit('RequestParse',[inputtext, AdvMode]);
+    }
+    console.log(AdvMode);
 }
 
 //TODO: get this working on iOS...
@@ -356,36 +379,33 @@ $(document).on(click, '.riverbankopt', function(event) {
 
 //Advanced/Basic Mode
 
-
-
-$(document).on(click,'.basicMode', function(event){
-    $('.basicMode').empty();
-    $('.basicMode').append('Switch to Basic Mode');
-    
-    AdvMode = 1;
-    
-    $('.basicMode').addClass('advancedMode');
-    $('.basicMode').removeClass('basicMode');
-    
-    $('.tellMode').empty();
-    $('.tellMode').append('Advanced Mode');
-})
-
-$(document).on(click,'.advancedMode', function(event){
-    $('.advancedMode').empty();
-    $('.advancedMode').append('Switch to Advanced Mode');
-    
-    AdvMode = 0;
-    
+$(document).on(click, '.advancedMode', function(event){
     $('.advancedMode').addClass('basicMode');
+    $('.advancedMode').empty();
+    $('.advancedMode').append('Switch to Basic Mode');
     $('.advancedMode').removeClass('advancedMode');
     
     $('.tellMode').empty();
-    $('.tellMode').append('Basic Mode');
+    $('.tellMode').append('Advanced Mode');
+    
+    AdvMode = 1;
 })
 
-//socket.on(function(nopy){
-//    $('.advancedMode').style.display('none');
-//    $('.tellMode').append('Basic Mode - Advanced Mode unavailable');
-//    $('.basicMode').style.display('none');
-//})
+$(document).on(click, '.basicMode', function(event){
+    $('.basicMode').addClass('advancedMode');
+    $('.basicMode').empty();
+    $('.basicMode').append('Switch to Advanced Mode');
+    $('.basicMode').removeClass('basicMode');
+    
+    $('.tellMode').empty();
+    $('.tellMode').append('Basic Mode');
+    
+    AdvMode = 0;
+})
+
+$(document).on(click, '.playAgain', function(event){
+    if (pyServDown){
+        $('.tellMode').empty();
+        $('.tellMode').append('Basic Mode');
+    }
+})
